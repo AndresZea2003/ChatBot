@@ -1,5 +1,7 @@
 import {PuppeteerWebBaseLoader} from "langchain/document_loaders/web/puppeteer";
 import {CheerioWebBaseLoader} from "langchain/document_loaders/web/cheerio";
+import {FaissStore} from "langchain/vectorstores/faiss";
+import {OpenAIEmbeddings} from "langchain/embeddings";
 
 const urls_wc = ["https://placetopay-docs.placetopay.ws/",
     "https://placetopay-docs.placetopay.ws/how-checkout-works",
@@ -50,7 +52,7 @@ const loader = new PuppeteerWebBaseLoader('https://placetopay-docs.placetopay.ws
 
         // Función para agregar una sección al array
         function addSection(title, content) {
-            sections.push({title, content});
+            sections.push([title, content]);
         }
 
         // Itera sobre las etiquetas h1, h2, h3 y h4 para identificar las secciones
@@ -75,17 +77,22 @@ const loader = new PuppeteerWebBaseLoader('https://placetopay-docs.placetopay.ws
         });
         // scrappedDocContent.push(scrappedData);
 
-        return {
-            documentation: sections,
-            url: 'URL AQUI'
-        }
+        return [ sections,'URL AQUI' ]
+
     },
 });
 
+const docs = await loader.load();
+const vectorStore = await FaissStore.fromDocuments(
+    docs,
+    new OpenAIEmbeddings({
+        openAIApiKey: ''
+    })
+);
 
 async function yep() {
-    const docs = await loader.load();
-    console.log(docs[0].pageContent);
+    const resultOne = await vectorStore.similaritySearch("Como hago un pago de suscripcion", 1);
+    console.log(resultOne[0].pageContent);
 }
 
 yep()
