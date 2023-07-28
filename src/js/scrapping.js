@@ -9,7 +9,8 @@ import {LLMChain, ConversationChain} from 'langchain/chains';
 
 import fs from 'node:fs';
 
-const urls_wc = ["https://placetopay-docs.placetopay.ws/",
+const urls_wc = [
+    "https://placetopay-docs.placetopay.ws/",
     "https://placetopay-docs.placetopay.ws/how-checkout-works",
     "https://placetopay-docs.placetopay.ws/plugins",
     "https://placetopay-docs.placetopay.ws/lightbox",
@@ -103,17 +104,36 @@ async function scrapeUrls(urls) {
 
                 let modifiedData = "";
                 modifiedData = dataFromWeb.replace(/<article[^>]*>/g, '').replace(/<\/article>/g, '');
+                modifiedData = modifiedData.replace(/<(\w+)(?:\s+[^>]*)?>/g, '<$1>');
+                modifiedData = modifiedData.replace(/<svg[^>]*>/g, '').replace(/<\/svg>/g, '');
                 modifiedData = modifiedData.replace(/<svg[^>]*>/g, '').replace(/<\/svg>/g, '');
                 modifiedData = modifiedData.replace(/<path[^>]*>/g, '').replace(/<\/path>/g, '');
+                modifiedData = modifiedData.replace(/<div class="[&>[^>]*>/g, '').replace(/<\/div>/g, '');
                 modifiedData = modifiedData.replace(/<div[^>]*>/g, '').replace(/<\/div>/g, '');
                 modifiedData = modifiedData.replace(/<img[^>]*>/g, '');
-                modifiedData = modifiedData.replace(/<button[^>]*>/g, '');
+                modifiedData = modifiedData.replace(/<button[^>]*>[^</button>]/g, '')
                 modifiedData = modifiedData.replaceAll(/<span[^>]*>/g, '').replace(/<\/span>/g, '');
                 modifiedData = modifiedData.replace(/<a[^>]*>/g, '').replace(/<\/a>/g, '');
                 modifiedData = modifiedData.replace(/<dd[^>]*>/g, '').replace(/<\/dd>/g, '');
                 modifiedData = modifiedData.replace(/<dt[^>]*>/g, '').replace(/<\/dt>/g, '');
                 modifiedData = modifiedData.replace(/<hr[^>]*>/g, '');
+                modifiedData = modifiedData.replace(/<li[^>]*>/g, '').replace(/<\/li>/g, '');
+                modifiedData = modifiedData.replace(/<ul[^>]*>/g, '').replace(/<\/ul>/g, '');
+                modifiedData = modifiedData.replace(/<ol[^>]*>/g, '').replace(/<\/ol>/g, '');
+                modifiedData = modifiedData.replace(/<dl[^>]*>/g, '').replace(/<\/dl>/g, '');
+                modifiedData = modifiedData.replace(/<p[^>]*>/g, '').replace(/<\/p>/g, '');
                 modifiedData = modifiedData.replace(/CopyCopied!/g, '');
+                modifiedData = modifiedData.replace(/\[&amp;>:last-child\]/g, '');
+                modifiedData = modifiedData.replace(/class="[^"]*"/g, '');
+                modifiedData = modifiedData.replace(/id="[^"]*"/g, '');
+                modifiedData = modifiedData.replace(/REQUIREDDescription:first-child]:mt-0 :mb-0">/g, '');
+                modifiedData = modifiedData.replace(/<!-- -->/g, '');
+                modifiedData = modifiedData.replace(/Typestringis/g, '');
+                modifiedData = modifiedData.replace(/:mb-0/g, '');
+                modifiedData = modifiedData.replace(/:mt-0/g, '');
+                modifiedData = modifiedData.replace(/:first-child]/g, '');
+                modifiedData = modifiedData.replace(/xl:top-24/g, '');
+                modifiedData = modifiedData.replace(/xl:sticky/g, '');
 
                 // Cargar el contenido HTML en Cheerio
 
@@ -127,18 +147,32 @@ async function scrapeUrls(urls) {
                 // Función para agregar una sección al array
                 function addSection(title, content) {
                     // sections.push([title, content]);
-                    sections.push({content: `title: ${title} \n Content: ${content} \n url: ${url}`});
-                    docsDate.push({content: `title: ${title} \n Content: ${content} \n url: ${url}`})
+                    if (url === "https://placetopay-docs.placetopay.ws/api-reference/session" || url === "https://placetopay-docs.placetopay.ws/api-reference/payment" || url ===  "https://placetopay-docs.placetopay.ws/api-reference/token") {
+                        sections.push({content: `title: Api ${title} \n Content: ${content} \n source: ${url}`});
+                        docsDate.push({content: `title: Api ${title} \n Content: ${content} \n source: ${url}`})
+                    }else {
+                        sections.push({content: `title: ${title} \n Content: ${content} \n source: ${url}`});
+                        docsDate.push({content: `title: ${title} \n Content: ${content} \n source: ${url}`})
+                    }
 
                 }
 
-                // Itera sobre las etiquetas h1, h2, h3 y h4 para identificar las secciones
-                $('h1, h2').each((index, element) => {
-                    const title = $(element).text().trim();
-                    // const content = $(element).nextUntil('h1, h2, h3, h4').not('script').toArray().map(el => $.html(el)).join('');
-                    const content = $(element).nextUntil('h1, h2').not('script').toArray().map(el => $(el).text()).join('');
+                if (url === 'https://placetopay-docs.placetopay.ws/create-session') {
+                    // // Itera sobre las etiquetas h1, h2, h3 y h4 para identificar las secciones
+
+                    $('h1, h2').each((index, element) => {
+                        const title = $(element).text().trim();
+                        // const content = $(element).nextUntil('h1, h2, h3, h4').not('script').toArray().map(el => $.html(el)).join('');
+                        const content = $(element).nextUntil('h1, h2').not('script').toArray().map(el => $(el).text()).join('');
+                        addSection(title, content);
+                    });
+                } else {
+                    const title_html = $('h1').first();
+                    const title = title_html.text().trim();
+                    const content = title_html.nextAll().not('script').toArray().map(el => $(el).text()).join(' ');
                     addSection(title, content);
-                });
+                }
+
 
                 // Muestra las secciones en la consola
                 sections.forEach((section, index) => {
@@ -187,6 +221,23 @@ async function scrapeUrls(urls) {
     return scrappedDocs;
 }
 
+async function cargarContexto(pregunta, key) {
+    const loaderJson = new JSONLoader('datos.json');
+    const docsJson = await loaderJson.load();
+
+    const vectorStore = await FaissStore.fromDocuments(
+        docsJson,
+        new OpenAIEmbeddings({
+            openAIApiKey: key
+        })
+    );
+    const similaryContext = await vectorStore.similaritySearch(pregunta, 1);
+
+    return similaryContext
+}
+
+// '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'
+
 
 async function yep() {
 
@@ -198,7 +249,7 @@ async function yep() {
     const vectorStore = await FaissStore.fromDocuments(
         docsJson,
         new OpenAIEmbeddings({
-            openAIApiKey: ''
+            openAIApiKey: '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'
         })
     );
     const similaryContext = await vectorStore.similaritySearch(pregunta, 1);
@@ -206,36 +257,36 @@ async function yep() {
     console.log(similaryContext)
     // console.log(resultOne[0].pageContent);
 
-    const template = "Nombre: {name} \n Rol: {role} \n Tarea: Asistente virtual especializado en la de implementación de el producto WebCheckout de la empresa PlaceToPay, que forma parte de Evertec. \n informacion de apoyo: {context} \n Condicion1: Solo puedes responder a preguntar relacionadas con tu Rol \n Condicion2: Ser un asistente muy alegre que siempre quiere ayudar \n Condicion3: Si no tienes informacion para responder una pregunta debes indicar que no cuentas con esta informacion \n Condicion4: Tienes prohibido dar información Erronea \n Condicion5: Usa la informacion de apoyo para complementar respuestas eficacez \n, Ahora ayuda a un Usuario que te dice: "
-
-    const promptTemplate = new PromptTemplate({
-        template: template,
-        inputVariables: ["name", "role", "context"]
-    })
-
-    const model = new OpenAI({
-        model_name: 'gpt-3.5-turbo-16k-0613',
-        openAIApiKey: '',
-        temperature: 0.1,
-        maxTokens: 256
-    })
-
-    const chain = new ConversationChain({
-        llm: model,
-    })
-
-    let formattedPrompt = await promptTemplate.format({
-        name: 'Kike bot',
-        role: "PlacetoPay's virtual assistant",
-        // language: 'Spanish',
-        context: similaryContext[0].pageContent,
-    })
-
-    let res = (await chain.call({
-        input: formattedPrompt + pregunta
-    })).response
-
-    console.log(res)
+    // const template = "Nombre: {name} \n Rol: {role} \n Tarea: Asistente virtual especializado en la de implementación de el producto WebCheckout de la empresa PlaceToPay, que forma parte de Evertec. \n informacion de apoyo: {context} \n Condicion1: Solo puedes responder a preguntar relacionadas con tu Rol \n Condicion2: Ser un asistente muy alegre que siempre quiere ayudar \n Condicion3: Si no tienes informacion para responder una pregunta debes indicar que no cuentas con esta informacion \n Condicion4: Tienes prohibido dar información Erronea \n Condicion5: Usa la informacion de apoyo para complementar respuestas eficacez \n, Ahora ayuda a un Usuario que te dice: "
+    //
+    // const promptTemplate = new PromptTemplate({
+    //     template: template,
+    //     inputVariables: ["name", "role", "context"]
+    // })
+    //
+    // const model = new OpenAI({
+    //     model_name: 'gpt-3.5-turbo-16k-0613',
+    //     openAIApiKey: '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',
+    //     temperature: 0.1,
+    //     maxTokens: 256
+    // })
+    //
+    // const chain = new ConversationChain({
+    //     llm: model,
+    // })
+    //
+    // let formattedPrompt = await promptTemplate.format({
+    //     name: 'Kike bot',
+    //     role: "PlacetoPay's virtual assistant",
+    //     // language: 'Spanish',
+    //     context: similaryContext[0].pageContent,
+    // })
+    //
+    // let res = (await chain.call({
+    //     input: formattedPrompt + pregunta
+    // })).response
+    //
+    // console.log(res)
 }
 
 
@@ -243,5 +294,5 @@ async function updateInfo() {
     const scrappedDataArray = await scrapeUrls(urls_wc);
 }
 
-// updateInfo()
-yep()
+updateInfo()
+// yep()
