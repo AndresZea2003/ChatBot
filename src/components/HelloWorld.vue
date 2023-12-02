@@ -125,6 +125,9 @@ let temporalPrompt = ref('')
 async function sendMessage() {
 
   document.getElementById('logo').classList.replace('opacity-80', 'opacity-0')
+  setTimeout(function (){
+    document.getElementById('logo').classList.add("hidden")
+  }, 1000)
 
   let userPrompt = document.getElementById('userPrompt').value
 
@@ -136,7 +139,7 @@ async function sendMessage() {
     loading.value = true;
     const response = await axios.post('http://localhost:3000/cargar-contexto', {
       pregunta: userPrompt,
-      key: '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'
+      key: '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'
     });
     const resultado = response.data.result;
 
@@ -144,7 +147,7 @@ async function sendMessage() {
 
     const model = new OpenAI({
       model_name: 'gpt-3.5-turbo-16k-0613',
-      openAIApiKey: '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',
+      openAIApiKey: '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',
       temperature: 0.1,
       streaming: true,
       maxTokens: 412
@@ -206,12 +209,22 @@ async function sendMessage() {
 
 }
 
+const refresh = () => {
+  window.location.href = "http://localhost:5173/";
+
+}
+
 </script>
 
 <template>
+
+  <div>
+    <apple-pay-button @click="" buttonstyle="black" type="plain" locale="en"></apple-pay-button>
+  </div>
+
   <div class="h-full flex justify-center items-center bg-stone-900">
 
-    <div id="logo" class="fixed opacity-80 duration-300" style="left: 40%; top: 40%; z-index: 1">
+    <div id="logo" class="fixed opacity-80 duration-300" style="left: 36%; top: 40%; z-index: 1">
       <img src="/placetopay-logo-black.svg" width="400" alt="">
       <div class="flex justify-center">
         <div class="text-xl font-semibold pt-5">
@@ -228,8 +241,10 @@ async function sendMessage() {
 
         <div class="fixed left-0 top-0 h-[10%] mt-14 w-screen flex justify-center items-end">
           <div class="mb-5 bg-orange-400 p-4 flex justify-between rounded-t-md w-[34%]">
-            <div class="font-semibold text-xl">Asistente de implementacion - Kike Bot</div>
-            <div>Ayuda</div>
+            <div class="font-semibold text-xl text-white">Asistente de implementacion - Kike Bot - IA</div>
+            <button class="bg-stone-900 p-1 rounded-md text-gray-300 hover:opacity-50 hover:scale-90" @click="refresh()">
+              <svg fill="white" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path d="M14.928 23.617c-.759.211-1.551.341-2.367.383l.085-2.026c.559-.041 1.104-.124 1.631-.263l.651 1.906zm3.396-19.595c-.651-.458-1.354-.847-2.098-1.157l-.623 1.914c.508.223.98.506 1.435.815l1.286-1.572zm-17.127 6.911c-.13.676-.198 1.374-.198 2.088l.021.402 1.985-.278-.006-.124c0-.504.049-.996.129-1.477l-1.931-.611zm17.914-6.295l-1.27 1.553c.448.384.845.821 1.211 1.285l1.626-1.208c-.464-.597-.99-1.142-1.567-1.63zm-14.588 3.398c1.442-2.148 3.79-3.647 6.49-3.947v1.932l2.991-2.996-2.991-3.004v2.05c-3.455.309-6.454 2.219-8.245 4.979l1.755.986zm10.701 13.359l.655 1.916c.737-.28 1.438-.635 2.09-1.058l-1.24-1.588c-.472.292-.981.526-1.505.73zm-13.791-11.437l1.91.604c.166-.582.392-1.139.667-1.668l-1.747-.981c-.342.647-.623 1.33-.83 2.045zm20.151 8.43c.895-1.589 1.416-3.414 1.416-5.367 0-2.188-.645-4.223-1.746-5.936l-1.621 1.205c.857 1.376 1.367 2.992 1.367 4.731 0 1.604-.442 3.097-1.18 4.402l-1.763-.964 1.193 4.072 4.072-1.192-1.738-.951zm-9.94 3.608c-3.181-.126-5.94-1.898-7.44-4.499l1.769-1.026-4.103-1.088-1.089 4.1 1.695-.983c1.829 3.175 5.195 5.335 9.084 5.491l.084-1.995z"/></svg>
+            </button>
           </div>
         </div>
 
@@ -287,9 +302,9 @@ async function sendMessage() {
 
 
     <div class="fixed left-0 bottom-0 h-[10%] w-screen flex justify-center items-end">
-      <div class="flex justify-center items-end gap-5 mb-10 w-[30%] bg-gray-200 p-5 rounded-md">
-        <input class="w-[70%] p-2" id="userPrompt" type="text" placeholder="Escribe tu pregunta">
-        <button class="bg-orange-400 font-semibold rounded-md p-2" @click="sendMessage()">Enviar</button>
+      <div class="flex justify-center items-end gap-5 mb-10 w-[35%] bg-gray-400 p-5 rounded-md">
+        <input v-on:keyup.enter="sendMessage()" class="w-[80%] p-2" id="userPrompt" type="text" placeholder="Escribe tu pregunta">
+        <button class="bg-orange-400 font-semibold rounded-md p-2 text-white" @click="sendMessage()">Enviar</button>
       </div>
     </div>
 
